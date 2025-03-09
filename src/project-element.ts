@@ -3,12 +3,13 @@ import { customElement } from "lit/decorators.js";
 import "./head-foot.js"
 import "./login.js"
 
+
 @customElement('project-element')
 export default class Project extends LitElement{
 render(){
 
   return html`
-  
+  <head-foot></head-foot>
   <log-in></log-in>
   `
 }

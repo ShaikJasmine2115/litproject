@@ -6,6 +6,7 @@ export default class HeaderFooter extends LitElement{
     static styles =css`
     header {
         position: fixed;
+        top:0;      
         background-color: #840533;
         color: white;
         display: flex;
@@ -19,7 +20,7 @@ export default class HeaderFooter extends LitElement{
         box-shadow: 0px 15px 15px rgba(0, 0, 0, 0.2);
     }
     header h1 {
-        margin: 0;
+      
         padding:15px;
         font-size: 30px;
     }
