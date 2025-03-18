@@ -9,7 +9,7 @@ export default class Project extends LitElement{
 render(){
 
   return html`
-  <head-foot></head-foot>
+  
   <log-in></log-in>
   `
 }
