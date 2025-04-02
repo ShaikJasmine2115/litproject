@@ -1,29 +1,27 @@
 import { LitElement, html,  css, PropertyValues } from "lit";
 import { customElement,property,state,query } from "lit/decorators.js";
+import { Router } from '@lit-labs/router';
 import { UnsafeMathDirective } from "lit/directives/unsafe-mathml.js";
 
 @customElement('log-in')
 export default class Login extends LitElement{
+    @state() private formData: Record<string, string> = {};
     @query('#login-form') logform!: HTMLFormElement;
-    @query('#error-message') errorMessage!: HTMLDivElement;
+    @query('#error-message') errorMessage!: HTMLDivElement ;
     @query('#login') loginBtn!: HTMLButtonElement;
-    @query('#register-toggle') regTog!: HTMLButtonElement;
-    activeForm: string ;
+    // activeForm: string ;
     username: string = '' ;
     password: string = '' ;
-    userfirstname: string = '' ;
-    userlastname: string = '' ;
     email: string = '' ;
 
-    constructor(){
-        super()
-        this.activeForm ='loginForm';
-        
-    }  
+    // constructor(){
+    //     super()
+    //     this.activeForm ='loginForm';       
+    // }  
     // protected firstUpdated(_changedProperties: PropertyValues): void {}
    render(){
         return html`
-            ${this.activeForm === 'loginForm'? this.renderLoginForm() : this.renderRegForm()}
+        ${this.renderLoginForm()}
               `
     }
 
@@ -32,8 +30,8 @@ export default class Login extends LitElement{
             <div class="form-container">        
                 <form id="login-form" class="form" @submit=${this.logSubmit}>
                     <h2 id="inbox">Validate your credentials</h2> <br>
-                    <input type="text" id="login-username" placeholder="Username" required>
-                    <input type="password" id="login-password" placeholder="Password" required>
+                    <input type="text" id="login-username"  placeholder="Username" @change="${this.handleInput}" required>
+                    <input type="password" id="login-password" placeholder="Password" @change="${this.handleInput}"required>
                     <div id="loginbtn"><button id="login" type="submit">Login</button></div>
                 </form>
                 <div id="error-message"></div>
@@ -42,48 +40,30 @@ export default class Login extends LitElement{
         `
     }
 
-    renderRegForm(){
-        return html`
-        <div class="form-container"> 
-            <form id="register-form" class="form" @submit=${this.regSubmit} >
-                <h2>Register</h2> <br>
-                <input type="text" id="register-userfirstname" placeholder="First name" maxlength="15" minlength="2" required>                <input type="text" id="register-userlastname" placeholder="Last name" maxlength="15" minlength="2" required>
-                <input type="email" id="register-email" placeholder="Email" required>
-                <input type="password" id="register-password" placeholder="Password" maxlength="20" minlength="8" required >
-                <div id="registerbtn"><button id="register" type="submit">Register</button></div>
-            </form>
-            <span @click=${this.logToggle} id="login-link" >Back to login</span>  <br>        
-        </div>
-        `
-    }
-    
-
     regToggle(){
-        this.activeForm = 'registerForm';
         this.requestUpdate();
+        this.dispatchEvent(new CustomEvent('navigate', {
+            detail: '/register',
+            bubbles: true,
+            composed: true
+        }));
+
     }
 
-    logToggle(){
-        this.activeForm = 'loginForm';
-        this.requestUpdate();
+
+   
+    handleInput(event: Event) {
+        const target = event.target as HTMLInputElement;
+        this.formData = { ...this.formData, [target.id]: target.value };  
+        // console.log(this.formData);  
     }
 
-    logSubmit(event:Event){
-        event.preventDefault();
-        const form = event.target as HTMLFormElement;
-        this.username=(form.querySelector('#login-username')as HTMLInputElement).value;
-        this.password= (form.querySelector('#login-password') as HTMLInputElement).value;
-        this.authenticateUser(this.username,this.password);       
-    }
-
-    regSubmit(event: Event){
-        event.preventDefault();
-        const form = event.target as HTMLFormElement;
-        this.userfirstname=(form.querySelector('#register-userfirstname') as HTMLInputElement).value;
-        this.userlastname=(form.querySelector('#register-userlastname') as HTMLInputElement).value;
-        this.email=(form.querySelector('#register-email') as HTMLInputElement).value;
-        this.password=(form.querySelector('#register-password') as HTMLInputElement).value;
-        this.registerUser(this.userfirstname,this.userlastname,this.email,this.password);
+    logSubmit(event: Event) {
+        event.preventDefault(); // Prevent form refresh
+        // console.log(this.formData);
+        const { "login-username": username, "login-password": password } = this.formData; 
+        // console.log(username,password);
+        this.authenticateUser(username,password);
     }
 
     authenticateUser(username : string,password : string){      
@@ -97,14 +77,23 @@ export default class Login extends LitElement{
                     sessionStorage.setItem("userData", JSON.stringify(user));
                     console.log("loggedin");
                     // window.location.href= "postlogin.html";
+                    this.dispatchEvent(new CustomEvent('navigate', {
+                        detail: '/dashboard',
+                        bubbles: true,
+                        composed: true
+                    }));
+                    
                 }else{
                    this.errorMessage.textContent="Incorrect username or password";
                    this.loginBtn.textContent='Try again';
-                   this.regTog.style.display='none';
-                   this.loginBtn.addEventListener('click', () => {
-                    this.resetloginForm();
-                }, { once: true });
-                 
+                //    this.regTog.style.display='none';
+                   this.loginBtn.onclick = () => {
+                        this.resetloginForm(); 
+                        this.loginBtn.onclick = null;
+                      };
+                //    this.loginBtn.addEventListener('click', () => {
+                //         this.resetloginForm();
+                //     }, { once: true });              
                 }
             })
             .catch(error => console.error("Error:", error));
@@ -113,34 +102,14 @@ export default class Login extends LitElement{
         this.logform.reset();
         this.loginBtn.textContent='Login';      
         this.errorMessage.textContent='';     
-        this.regTog.style.display='block';
+        // this.regTog.style.display='block';
     }
-
-
-
-
-    registerUser(userfirstname:string,userlastname:string, email: string, password: string){
-        const errorMessage= this.shadowRoot?.querySelector('#error-message');
-        console.log(userfirstname,userlastname,email,password);
-
-
-    }
-
-
-
-    resetregForm(){
-        const reg= this.shadowRoot?.querySelector('#register') as HTMLButtonElement;
-            reg.style.display='block';       
-        const refor=this.shadowRoot?.querySelector('#register-form')as HTMLFormElement;
-            refor.reset();       
-        const errm= this.shadowRoot?.querySelector('#error-message') as HTMLDivElement;
-            errm.innerHTML='';
-    }
+   
     static styles= css`
-    * {
+     * {
         box-sizing: border-box;        
     }
-    body {
+    /* body {
         background-color:#d8d3d3;
         display: flex;
         font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
@@ -148,25 +117,25 @@ export default class Login extends LitElement{
         justify-content: center;
         align-items: center;
         min-height: 100vh;
-    }
-    #wrapper {
+    } */
+    /*#wrapper {
         display: flex;
-        flex-direction: column; /* Stack heading and container */
+        flex-direction: column;  Stack heading and container 
         align-items: center;
-        gap: 20px; /* Adds space between heading and container */  
-        flex-grow: 1; /* Helps maintain centering */
-    justify-content: center;  
-    }
+        gap: 20px; Adds space between heading and container  
+        flex-grow: 1; Helps maintain centering 
+        justify-content: center;  
+    } 
     #heading {
         margin-top: 30px;
         text-align: center;
         
-    }
+    }*/
     #inbox{
         color:#534949;
         padding: 10px, 10px;
     }
-    .container {           
+    /* .container {           
         text-align: center;
         width: 100%;
         max-width: 400px;       
@@ -174,11 +143,16 @@ export default class Login extends LitElement{
         border-radius: 8px;
         overflow: hidden;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
+    } */
     .form-container {
+        padding: 20px;
+        border-radius: 50px;
+        width:400px;
         background-color: rgb(197 191 193);
-        position: relative;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -187,8 +161,7 @@ export default class Login extends LitElement{
     }
     .form {       
         padding: 20px;       
-    }
-    
+    }   
     #login-link{
         color: #8a1741;
     }
@@ -210,7 +183,6 @@ export default class Login extends LitElement{
         border-radius: 4px;
         transition: background-color 0.3s;
     }
-
     button:hover {
         background-color: #d34e93;
     }
@@ -236,6 +208,5 @@ export default class Login extends LitElement{
         padding-bottom:10px;
         }
 
-    `
-   
+    `  
 }
